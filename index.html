@@ -7,7 +7,13 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <div class="container">
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div class="controls">
+      <button onclick="startGame()">Start</button>
+      <button onclick="resetGame()">Restart</button>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

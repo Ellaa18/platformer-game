@@ -1,6 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+let isRunning = false;
+
 // Player setup
 const player = {
   x: 50,
@@ -40,7 +42,7 @@ const enemy = {
   direction: -1,
 };
 
-// Goal (NEW)
+// Goal
 const goal = {
   x: 700,
   y: 290,
@@ -49,10 +51,15 @@ const goal = {
   color: 'gold',
 };
 
+// Obstacles (hazards)
+const spikes = [
+  { x: 300, y: 340, width: 30, height: 10, color: 'black' },
+  { x: 520, y: 340, width: 30, height: 10, color: 'black' },
+];
+
 const gravity = 0.5;
 const keys = {};
 
-// Key listeners
 document.addEventListener('keydown', (e) => {
   keys[e.key] = true;
 });
@@ -60,7 +67,6 @@ document.addEventListener('keyup', (e) => {
   keys[e.key] = false;
 });
 
-// Drawing functions
 function drawRect(obj) {
   ctx.fillStyle = obj.color;
   ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
@@ -81,7 +87,6 @@ function drawCoin(coin) {
   }
 }
 
-// Game update
 function update() {
   // Player movement
   if (keys['ArrowLeft'] || keys['a']) {
@@ -92,16 +97,12 @@ function update() {
     player.velocityX = 0;
   }
 
-  // Jump
   if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.isOnGround) {
     player.velocityY = player.jumpForce;
     player.isOnGround = false;
   }
 
-  // Apply gravity
   player.velocityY += gravity;
-
-  // Move player
   player.x += player.velocityX;
   player.y += player.velocityY;
 
@@ -151,7 +152,20 @@ function update() {
     resetGame();
   }
 
-  // Check for win condition
+  // Spike collision
+  for (let spike of spikes) {
+    if (
+      player.x < spike.x + spike.width &&
+      player.x + player.width > spike.x &&
+      player.y < spike.y + spike.height &&
+      player.y + player.height > spike.y
+    ) {
+      alert('Game Over! You hit an obstacle.');
+      resetGame();
+    }
+  }
+
+  // Win condition
   const allCollected = coins.every((c) => c.collected);
   if (
     allCollected &&
@@ -168,43 +182,39 @@ function update() {
 function resetGame() {
   player.x = 50;
   player.y = 300;
+  player.velocityX = 0;
+  player.velocityY = 0;
   score = 0;
-  for (let coin of coins) {
-    coin.collected = false;
-  }
+  for (let coin of coins) coin.collected = false;
+  isRunning = false;
 }
 
-// Main game loop
-function gameLoop() {
+function drawEverything() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  update();
+  for (let plat of platforms) drawRect(plat);
+  for (let coin of coins) drawCoin(coin);
+  for (let spike of spikes) drawRect(spike);
 
-  // Draw platforms
-  for (let plat of platforms) {
-    drawRect(plat);
-  }
-
-  // Draw coins
-  for (let coin of coins) {
-    drawCoin(coin);
-  }
-
-  // Draw enemy
   drawRect(enemy);
-
-  // Draw goal (NEW)
   drawRect(goal);
-
-  // Draw player
   drawRect(player);
 
-  // Draw score
   ctx.fillStyle = 'black';
   ctx.font = '20px Arial';
   ctx.fillText(`Score: ${score}`, 10, 30);
+}
 
+function gameLoop() {
+  if (!isRunning) return;
+  update();
+  drawEverything();
   requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+function startGame() {
+  if (!isRunning) {
+    isRunning = true;
+    gameLoop();
+  }
+}

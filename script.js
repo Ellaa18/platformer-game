@@ -1,16 +1,17 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const CANVAS_WIDTH = canvas.width;
+const CANVAS_HEIGHT = canvas.height;
 
 let gameRunning = false;
 let gameOver = false;
+let score = 0;
 
-// Player
+// Player setup
 const player = {
   x: 100,
-  y: canvas.height - 150,
+  y: CANVAS_HEIGHT - 150,
   width: 50,
   height: 50,
   color: "red",
@@ -20,23 +21,42 @@ const player = {
 
 // Platforms
 const platforms = [
-  { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
-  { x: 300, y: canvas.height - 150, width: 150, height: 20 },
-  { x: 600, y: canvas.height - 250, width: 150, height: 20 },
-  { x: 900, y: canvas.height - 200, width: 150, height: 20 },
+  { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 }, // ground
+  { x: 300, y: CANVAS_HEIGHT - 150, width: 150, height: 20 },
+  { x: 600, y: CANVAS_HEIGHT - 250, width: 150, height: 20 },
+  { x: 900, y: CANVAS_HEIGHT - 200, width: 150, height: 20 },
 ];
 
 // Obstacles
 const obstacles = [
-  { x: 500, y: canvas.height - 70, width: 30, height: 30 },
-  { x: 800, y: canvas.height - 100, width: 30, height: 30 },
+  { x: 500, y: CANVAS_HEIGHT - 70, width: 30, height: 30 },
+  { x: 800, y: CANVAS_HEIGHT - 100, width: 30, height: 30 },
 ];
 
-// Gravity
+// Moving enemy
+const enemy = {
+  x: 700,
+  y: CANVAS_HEIGHT - 80,
+  width: 40,
+  height: 40,
+  dx: 3,
+  color: "purple",
+};
+
+// Finishing line (yellow vertical)
+const goal = {
+  x: CANVAS_WIDTH - 60,
+  y: CANVAS_HEIGHT - 300,
+  width: 10,
+  height: 280,
+  color: "yellow",
+};
+
+// Physics
 const gravity = 1.5;
 const jumpForce = 20;
 
-// Controls
+// Input keys
 const keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
@@ -54,6 +74,26 @@ function drawPlatforms() {
 function drawObstacles() {
   ctx.fillStyle = "black";
   obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+}
+
+function drawEnemy() {
+  ctx.fillStyle = enemy.color;
+  ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+}
+
+function drawGoal() {
+  ctx.fillStyle = goal.color;
+  ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+  // Add "FINISH" label
+  ctx.fillStyle = "black";
+  ctx.font = "bold 16px Arial";
+  ctx.fillText("FINISH", goal.x - 10, goal.y - 10);
+}
+
+function drawScore() {
+  ctx.fillStyle = "black";
+  ctx.font = "20px Arial";
+  ctx.fillText(`Score: ${score}`, 20, 40);
 }
 
 function checkPlatformCollision() {
@@ -87,6 +127,16 @@ function checkObstacleCollision() {
       endGame();
     }
   });
+
+  // Enemy collision
+  if (
+    player.x < enemy.x + enemy.width &&
+    player.x + player.width > enemy.x &&
+    player.y < enemy.y + enemy.height &&
+    player.y + player.height > enemy.y
+  ) {
+    endGame();
+  }
 }
 
 function movePlayer() {
@@ -96,22 +146,50 @@ function movePlayer() {
     player.dy = -jumpForce;
     player.jumping = true;
   }
-
   player.y += player.dy;
+
+  // Keep player inside canvas horizontally
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.width > CANVAS_WIDTH) player.x = CANVAS_WIDTH - player.width;
+}
+
+function moveEnemy() {
+  enemy.x += enemy.dx;
+  if (enemy.x < 600 || enemy.x + enemy.width > 900) {
+    enemy.dx *= -1;
+  }
+}
+
+function checkGoal() {
+  if (
+    player.x + player.width > goal.x &&
+    player.x < goal.x + goal.width &&
+    player.y + player.height > goal.y &&
+    player.y < goal.y + goal.height
+  ) {
+    endGame(true);
+  }
 }
 
 function gameLoop() {
   if (!gameRunning) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   movePlayer();
+  moveEnemy();
   checkPlatformCollision();
   checkObstacleCollision();
+  checkGoal();
 
   drawPlatforms();
   drawObstacles();
+  drawEnemy();
+  drawGoal();
   drawPlayer();
+  drawScore();
+
+  score++; // Increase score over time
 
   requestAnimationFrame(gameLoop);
 }
@@ -123,6 +201,7 @@ function startGame() {
   resetPlayer();
   gameRunning = true;
   gameOver = false;
+  score = 0;
   gameLoop();
 }
 
@@ -131,22 +210,28 @@ function restartGame() {
   resetPlayer();
   gameRunning = true;
   gameOver = false;
+  score = 0;
   gameLoop();
 }
 
 function exitGame() {
-  window.close();
+  // If window.close() doesn't work (usually on browsers),
+  // we can redirect to a goodbye page or just reload:
+  alert("Thanks for playing!");
+  window.location.reload();
 }
 
-function endGame() {
+function endGame(won = false) {
   gameRunning = false;
   gameOver = true;
+  const message = won ? "You Win! 🎉" : "Game Over!";
+  document.getElementById("game-over-message").textContent = message;
   document.getElementById("game-over-screen").classList.remove("hidden");
 }
 
 function resetPlayer() {
   player.x = 100;
-  player.y = canvas.height - 150;
+  player.y = CANVAS_HEIGHT - 150;
   player.dy = 0;
   player.jumping = false;
 }

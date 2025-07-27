@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-  <meta charset="UTF-8">
-  <title>Platformer Game</title>
+  <meta charset="UTF-8" />
+  <title>Platformer Adventure</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,12 +13,12 @@
   </div>
 
   <div id="game-over-screen" class="screen hidden">
-    <h1>Game Over!</h1>
+    <h1 id="game-over-message">Game Over!</h1>
     <button onclick="restartGame()">Restart</button>
     <button onclick="exitGame()">Exit</button>
   </div>
 
-  <canvas id="gameCanvas"></canvas>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
   
   <script src="script.js"></script>
 </body>

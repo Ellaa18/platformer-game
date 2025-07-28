@@ -1,13 +1,11 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Audio
 const coinSound = document.getElementById("coinSound");
 const jumpSound = document.getElementById("jumpSound");
 const winSound = document.getElementById("winSound");
 const loseSound = document.getElementById("loseSound");
 
-// Images
 const playerImage = new Image();
 playerImage.src = "p1_walk01.png";
 
@@ -23,7 +21,9 @@ treeImage.src = "item/cactus.png";
 const enemyImage = new Image();
 enemyImage.src = "enemies/fishSwim1.png";
 
-// Player
+const platformImage = new Image();
+platformImage.src = "item/grassHalfMid.png";
+
 const player = {
   x: 100,
   y: 300,
@@ -34,7 +34,6 @@ const player = {
   jumping: false
 };
 
-// Platforms
 const platforms = [
   { x: 0, y: 400, width: 1000, height: 20 },
   { x: 300, y: 300, width: 100, height: 20 },
@@ -43,23 +42,24 @@ const platforms = [
   { x: 850, y: 150, width: 100, height: 20 }
 ];
 
-// Enemy
 const enemies = [
   { x: 300, y: 380, width: 30, height: 30, dx: 2, minX: 250, maxX: 400 }
 ];
 
-// Obstacle tree
 const obstacle = { x: 600, y: 360, width: 30, height: 40 };
 
-// Coins
 const coins = [
   { x: 200, y: 360, width: 20, height: 20, collected: false },
   { x: 500, y: 220, width: 20, height: 20, collected: false },
-  { x: 800, y: 120, width: 20, height: 20, collected: false }
+  { x: 650, y: 100, width: 20, height: 20, collected: false },
+  { x: 300, y: 240, width: 20, height: 20, collected: false },
+  { x: 800, y: 120, width: 20, height: 20, collected: false },
+  { x: 100, y: 360, width: 20, height: 20, collected: false },
+  { x: 400, y: 270, width: 20, height: 20, collected: false },
+  { x: 600, y: 180, width: 20, height: 20, collected: false }
 ];
 
-// Goal
-const goal = { x: 950, y: 120, width: 30, height: 40 };
+const goal = { x: 950, y: 118, width: 30, height: 60 };
 
 let isGameRunning = false;
 let gamePaused = false;
@@ -71,7 +71,6 @@ const keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
-// Mobile Controls
 document.getElementById("leftBtn").addEventListener("touchstart", () => keys["ArrowLeft"] = true);
 document.getElementById("leftBtn").addEventListener("touchend", () => keys["ArrowLeft"] = false);
 document.getElementById("rightBtn").addEventListener("touchstart", () => keys["ArrowRight"] = true);
@@ -110,8 +109,11 @@ function drawPlayer() {
 }
 
 function drawPlatforms() {
-  ctx.fillStyle = "#654321";
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
+  platforms.forEach(p => {
+    for (let i = 0; i < p.width; i += 50) {
+      ctx.drawImage(platformImage, p.x + i, p.y, 50, 20);
+    }
+  });
 }
 
 function drawEnemies() {

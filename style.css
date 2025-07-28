@@ -1,7 +1,8 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #333;
+  background-image: url("item/iceWaterDeepStars.png");
+  background-size: cover;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -10,7 +11,7 @@ body {
 }
 
 canvas {
-  background-color: #87ceeb;
+  background-color: transparent;
   border: 2px solid black;
 }
 

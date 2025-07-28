@@ -1,292 +1,251 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const CANVAS_WIDTH = canvas.width;
-const CANVAS_HEIGHT = canvas.height;
+// Audio
+const coinSound = document.getElementById("coinSound");
+const jumpSound = document.getElementById("jumpSound");
 
-let gameRunning = false;
-let gameOver = false;
-let score = 0;
+// Images
+const playerImage = new Image();
+playerImage.src = "p1_walk01.png";
 
-// Player setup
+const coinImage = new Image();
+coinImage.src = "coinGold.png";
+
+// Player
 const player = {
   x: 100,
-  y: CANVAS_HEIGHT - 150,
-  width: 50,
-  height: 50,
-  color: "red",
-  dy: 0,
-  jumping: false,
-};
-
-// Platforms
-const platforms = [
-  { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 },
-  { x: 300, y: CANVAS_HEIGHT - 150, width: 150, height: 20 },
-  { x: 500, y: CANVAS_HEIGHT - 250, width: 290, height: 20 },
-  { x: 850, y: CANVAS_HEIGHT - 180, width: 100, height: 20 },
-];
-
-// obstacle 
-const obstacles = [
-  { x: 250, y: CANVAS_HEIGHT - 70, width: 30, height: 30 },
- 
-  
-];
-
-
-// Moving enemy
-const enemy = {
-  x: 700,
-  y: CANVAS_HEIGHT - 80,
+  y: 300,
   width: 40,
-  height: 40,
-  dx: 3,
-  color: "purple",
+  height: 60,
+  dx: 0,
+  dy: 0,
+  jumping: false
 };
 
-//  Goal moved further
-const goal = {
-  x: CANVAS_WIDTH - 20,
-  y: CANVAS_HEIGHT - 300,
-  width: 10,
-  height: 280,
-  color: "yellow",
-};
-
-// 🪙 Coins
-const coins = [
-  { x: 350, y: CANVAS_HEIGHT - 190, width: 20, height: 20, collected: false },
-  { x: 450, y: CANVAS_HEIGHT - 50, width: 20, height: 20, collected: false },
-  { x: 590, y: CANVAS_HEIGHT - 130, width: 20, height: 20, collected: false },
-  { x: 630, y: CANVAS_HEIGHT - 290, width: 20, height: 20, collected: false },
-  { x: 870, y: CANVAS_HEIGHT - 220, width: 20, height: 20, collected: false }
+// Platforms (added more platforms)
+const platforms = [
+  { x: 0, y: 400, width: 1000, height: 20 },
+  { x: 300, y: 300, width: 100, height: 20 },
+  { x: 500, y: 250, width: 100, height: 20 },
+  { x: 700, y: 200, width: 100, height: 20 },
+  { x: 850, y: 150, width: 100, height: 20 } // additional platform
 ];
 
-const gravity = 1.5;
-const jumpForce = 20;
+// Obstacles
+const enemies = [
+  { x: 300, y: 380, width: 20, height: 20, dx: 2, minX: 250, maxX: 400 } // limited movement
+];
+
+// Tree obstacle
+const obstacle = { x: 600, y: 360, width: 30, height: 40 };
+
+// Coins
+const coins = [
+  { x: 200, y: 360, width: 20, height: 20, collected: false },
+  { x: 500, y: 220, width: 20, height: 20, collected: false },
+  { x: 800, y: 120, width: 20, height: 20, collected: false }
+];
+
+// End goal
+const goal = { x: 950, y: 120, width: 30, height: 40 };
+
+// Game State
+let isGameRunning = false;
+let gamePaused = false;
+let score = 0;
+let highScore = 0;
 
 const keys = {};
+
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
-// Touch buttons
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
-const jumpBtn = document.getElementById("jumpBtn");
-
-leftBtn.addEventListener("touchstart", () => keys["leftTouch"] = true);
-leftBtn.addEventListener("touchend", () => keys["leftTouch"] = false);
-
-rightBtn.addEventListener("touchstart", () => keys["rightTouch"] = true);
-rightBtn.addEventListener("touchend", () => keys["rightTouch"] = false);
-
-jumpBtn.addEventListener("touchstart", () => {
+// Mobile Controls
+document.getElementById("leftBtn").addEventListener("touchstart", () => keys["ArrowLeft"] = true);
+document.getElementById("leftBtn").addEventListener("touchend", () => keys["ArrowLeft"] = false);
+document.getElementById("rightBtn").addEventListener("touchstart", () => keys["ArrowRight"] = true);
+document.getElementById("rightBtn").addEventListener("touchend", () => keys["ArrowRight"] = false);
+document.getElementById("jumpBtn").addEventListener("touchstart", () => {
   if (!player.jumping) {
-    player.dy = -jumpForce;
+    player.dy = -10;
     player.jumping = true;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
   }
 });
 
-// Drawing
+function startGame() {
+  document.getElementById("start-screen").classList.add("hidden");
+  isGameRunning = true;
+  gameLoop();
+}
+
+function restartGame() {
+  score = 0;
+  player.x = 100;
+  player.y = 300;
+  coins.forEach(c => c.collected = false);
+  document.getElementById("game-over-screen").classList.add("hidden");
+  isGameRunning = true;
+  gameLoop();
+}
+
+function exitGame() {
+  window.close();
+}
+
 function drawPlayer() {
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.width, player.height);
+  ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 }
 
 function drawPlatforms() {
-  ctx.fillStyle = "#4CAF50";
+  ctx.fillStyle = "#654321";
   platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
 }
 
-function drawObstacles() {
-  ctx.fillStyle = "#000";
-  obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+function drawEnemies() {
+  ctx.fillStyle = "red";
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.width, e.height));
 }
 
-function drawEnemy() {
-  ctx.fillStyle = enemy.color;
-  ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-}
-
-function drawGoal() {
-  ctx.fillStyle = goal.color;
-  ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
-  ctx.fillStyle = "black";
-  ctx.font = "bold 16px Arial";
-  ctx.fillText("FINISH", goal.x - 10, goal.y - 10);
+// 🆕 Draw Tree Obstacle
+function drawObstacle() {
+  ctx.fillStyle = "green";
+  ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
 }
 
 function drawCoins() {
-  coins.forEach(coin => {
-    if (!coin.collected) {
-      ctx.fillStyle = "gold";
-      ctx.beginPath();
-      ctx.arc(coin.x + coin.width / 2, coin.y + coin.height / 2, 10, 0, Math.PI * 2);
-      ctx.fill();
+  coins.forEach(c => {
+    if (!c.collected) {
+      ctx.drawImage(coinImage, c.x, c.y, c.width, c.height);
     }
   });
+}
+
+function drawGoal() {
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
 }
 
 function drawScore() {
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
-  ctx.fillText(`Score: ${score}`, 20, 40);
-}
-
-// Logic
-function checkPlatformCollision() {
-  let onGround = false;
-  platforms.forEach(p => {
-    if (
-      player.y + player.height <= p.y &&
-      player.y + player.height + player.dy >= p.y &&
-      player.x + player.width > p.x &&
-      player.x < p.x + p.width
-    ) {
-      player.jumping = false;
-      player.dy = 0;
-      player.y = p.y - player.height;
-      onGround = true;
-    }
-  });
-
-  if (!onGround) player.dy += gravity;
-}
-
-function checkObstacleCollision() {
-  for (const o of obstacles) {
-    if (
-      player.x < o.x + o.width &&
-      player.x + player.width > o.x &&
-      player.y < o.y + o.height &&
-      player.y + player.height > o.y
-    ) {
-      endGame();
-      return;
-    }
-  }
-
-  if (
-    player.x < enemy.x + enemy.width &&
-    player.x + player.width > enemy.x &&
-    player.y < enemy.y + enemy.height &&
-    player.y + player.height > enemy.y
-  ) {
-    endGame();
-  }
-}
-
-function checkCoinCollection() {
-  coins.forEach(coin => {
-    if (
-      !coin.collected &&
-      player.x < coin.x + coin.width &&
-      player.x + player.width > coin.x &&
-      player.y < coin.y + coin.height &&
-      player.y + player.height > coin.y
-    ) {
-      coin.collected = true;
-      score += 10; // 🎯 1 coin = 10 points
-    }
-  });
+  ctx.fillText("Score: " + score, 10, 20);
+  ctx.fillText("High Score: " + highScore, 10, 40);
 }
 
 function movePlayer() {
-  if (keys["ArrowRight"] || keys["d"] || keys["rightTouch"]) player.x += 5;
-  if (keys["ArrowLeft"] || keys["a"] || keys["leftTouch"]) player.x -= 5;
-
-  if ((keys["ArrowUp"] || keys["w"] || keys[" "]) && !player.jumping) {
-    player.dy = -jumpForce;
+  if ((keys["ArrowUp"] || keys[" "]) && !player.jumping) {
+    player.dy = -10;
     player.jumping = true;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
   }
 
+  if (keys["ArrowLeft"]) player.dx = -5;
+  else if (keys["ArrowRight"]) player.dx = 5;
+  else player.dx = 0;
+}
+
+function updatePlayer() {
+  player.x += player.dx;
   player.y += player.dy;
+  player.dy += 0.5;
 
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.width > CANVAS_WIDTH) player.x = CANVAS_WIDTH - player.width;
-}
+  platforms.forEach(p => {
+    if (
+      player.x < p.x + p.width &&
+      player.x + player.width > p.x &&
+      player.y + player.height >= p.y &&
+      player.y + player.height <= p.y + p.height
+    ) {
+      player.y = p.y - player.height;
+      player.dy = 0;
+      player.jumping = false;
+    }
+  });
 
-function moveEnemy() {
-  enemy.x += enemy.dx;
-  if (enemy.x < 600 || enemy.x + enemy.width > 900) {
-    enemy.dx *= -1;
-  }
-}
-
-function checkGoal() {
+  // Collision with obstacle
   if (
-    player.x + player.width > goal.x &&
-    player.x < goal.x + goal.width &&
-    player.y + player.height > goal.y &&
-    player.y < goal.y + goal.height
+    player.x < obstacle.x + obstacle.width &&
+    player.x + player.width > obstacle.x &&
+    player.y < obstacle.y + obstacle.height &&
+    player.y + player.height > obstacle.y
   ) {
-    endGame(true);
+    gameOver(false);
   }
+}
+
+function updateEnemies() {
+  enemies.forEach(e => {
+    e.x += e.dx;
+    if (e.x < e.minX || e.x + e.width > e.maxX) e.dx *= -1;
+
+    if (
+      player.x < e.x + e.width &&
+      player.x + player.width > e.x &&
+      player.y < e.y + e.height &&
+      player.y + player.height > e.y
+    ) {
+      gameOver(false);
+    }
+  });
+}
+
+function checkCoinCollection() {
+  coins.forEach(c => {
+    if (
+      !c.collected &&
+      player.x < c.x + c.width &&
+      player.x + player.width > c.x &&
+      player.y < c.y + c.height &&
+      player.y + player.height > c.y
+    ) {
+      c.collected = true;
+      score += 10;
+      coinSound.currentTime = 0;
+      coinSound.play();
+    }
+  });
+}
+
+function checkWin() {
+  if (
+    player.x < goal.x + goal.width &&
+    player.x + player.width > goal.x &&
+    player.y < goal.y + goal.height &&
+    player.y + player.height > goal.y
+  ) {
+    gameOver(true);
+  }
+}
+
+function gameOver(win) {
+  isGameRunning = false;
+  document.getElementById("game-over-message").innerText = win ? "You Win!" : "Game Over!";
+  document.getElementById("game-over-screen").classList.remove("hidden");
+  if (score > highScore) highScore = score;
 }
 
 function gameLoop() {
-  if (!gameRunning) return;
+  if (!isGameRunning || gamePaused) return;
 
-  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   movePlayer();
-  moveEnemy();
-  checkPlatformCollision();
-  checkObstacleCollision();
+  updatePlayer();
+  updateEnemies();
   checkCoinCollection();
-  checkGoal();
+  checkWin();
 
   drawPlatforms();
-  drawObstacles();
-  drawEnemy();
-  drawGoal();
+  drawEnemies();
+  drawObstacle(); // 🆕 draw the new tree obstacle
   drawCoins();
+  drawGoal();
   drawPlayer();
   drawScore();
 
   requestAnimationFrame(gameLoop);
-}
-
-// UI
-function startGame() {
-  document.getElementById("start-screen").classList.add("hidden");
-  document.getElementById("game-over-screen").classList.add("hidden");
-  resetPlayer();
-  gameRunning = true;
-  gameOver = false;
-  score = 0;
-  gameLoop();
-}
-
-function restartGame() {
-  document.getElementById("game-over-screen").classList.add("hidden");
-  resetPlayer();
-  gameRunning = true;
-  gameOver = false;
-  score = 0;
-
-  coins.forEach(c => c.collected = false); // reset coins
-
-  gameLoop();
-}
-
-function exitGame() {
-  alert("Thanks for playing!");
-  window.location.reload();
-}
-
-function endGame(won = false) {
-  gameRunning = false;
-  gameOver = true;
-  const message = won ? "🎉 You Win!" : "Game Over!";
-  document.getElementById("game-over-message").textContent = message;
-  document.getElementById("game-over-screen").classList.remove("hidden");
-}
-
-function resetPlayer() {
-  player.x = 100;
-  player.y = CANVAS_HEIGHT - 150;
-  player.dy = 0;
-  player.jumping = false;
 }

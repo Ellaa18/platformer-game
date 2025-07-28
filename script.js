@@ -4,6 +4,8 @@ const ctx = canvas.getContext("2d");
 // Audio
 const coinSound = document.getElementById("coinSound");
 const jumpSound = document.getElementById("jumpSound");
+const winSound = document.getElementById("winSound");
+const loseSound = document.getElementById("loseSound");
 
 // Images
 const playerImage = new Image();
@@ -11,6 +13,15 @@ playerImage.src = "p1_walk01.png";
 
 const coinImage = new Image();
 coinImage.src = "coinGold.png";
+
+const flagImage = new Image();
+flagImage.src = "item/flagYellow.png";
+
+const treeImage = new Image();
+treeImage.src = "item/cactus.png";
+
+const enemyImage = new Image();
+enemyImage.src = "enemies/fishSwim1.png";
 
 // Player
 const player = {
@@ -23,21 +34,21 @@ const player = {
   jumping: false
 };
 
-// Platforms (added more platforms)
+// Platforms
 const platforms = [
   { x: 0, y: 400, width: 1000, height: 20 },
   { x: 300, y: 300, width: 100, height: 20 },
   { x: 500, y: 250, width: 100, height: 20 },
   { x: 700, y: 200, width: 100, height: 20 },
-  { x: 850, y: 150, width: 100, height: 20 } // additional platform
+  { x: 850, y: 150, width: 100, height: 20 }
 ];
 
-// Obstacles
+// Enemy
 const enemies = [
-  { x: 300, y: 380, width: 20, height: 20, dx: 2, minX: 250, maxX: 400 } // limited movement
+  { x: 300, y: 380, width: 30, height: 30, dx: 2, minX: 250, maxX: 400 }
 ];
 
-// Tree obstacle
+// Obstacle tree
 const obstacle = { x: 600, y: 360, width: 30, height: 40 };
 
 // Coins
@@ -47,10 +58,9 @@ const coins = [
   { x: 800, y: 120, width: 20, height: 20, collected: false }
 ];
 
-// End goal
+// Goal
 const goal = { x: 950, y: 120, width: 30, height: 40 };
 
-// Game State
 let isGameRunning = false;
 let gamePaused = false;
 let score = 0;
@@ -105,14 +115,13 @@ function drawPlatforms() {
 }
 
 function drawEnemies() {
-  ctx.fillStyle = "red";
-  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.width, e.height));
+  enemies.forEach(e => {
+    ctx.drawImage(enemyImage, e.x, e.y, e.width, e.height);
+  });
 }
 
-// 🆕 Draw Tree Obstacle
 function drawObstacle() {
-  ctx.fillStyle = "green";
-  ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+  ctx.drawImage(treeImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
 }
 
 function drawCoins() {
@@ -124,8 +133,7 @@ function drawCoins() {
 }
 
 function drawGoal() {
-  ctx.fillStyle = "yellow";
-  ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+  ctx.drawImage(flagImage, goal.x, goal.y, goal.width, goal.height);
 }
 
 function drawScore() {
@@ -166,7 +174,6 @@ function updatePlayer() {
     }
   });
 
-  // Collision with obstacle
   if (
     player.x < obstacle.x + obstacle.width &&
     player.x + player.width > obstacle.x &&
@@ -225,6 +232,8 @@ function gameOver(win) {
   isGameRunning = false;
   document.getElementById("game-over-message").innerText = win ? "You Win!" : "Game Over!";
   document.getElementById("game-over-screen").classList.remove("hidden");
+  if (win) winSound.play();
+  else loseSound.play();
   if (score > highScore) highScore = score;
 }
 
@@ -241,7 +250,7 @@ function gameLoop() {
 
   drawPlatforms();
   drawEnemies();
-  drawObstacle(); // 🆕 draw the new tree obstacle
+  drawObstacle();
   drawCoins();
   drawGoal();
   drawPlayer();

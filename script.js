@@ -21,7 +21,7 @@ const player = {
 
 // Platforms
 const platforms = [
-  { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 }, // ground
+  { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 },
   { x: 300, y: CANVAS_HEIGHT - 150, width: 150, height: 20 },
   { x: 600, y: CANVAS_HEIGHT - 250, width: 150, height: 20 },
   { x: 850, y: CANVAS_HEIGHT - 180, width: 100, height: 20 },
@@ -59,6 +59,24 @@ const jumpForce = 20;
 const keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
+
+// Touch buttons
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const jumpBtn = document.getElementById("jumpBtn");
+
+leftBtn.addEventListener("touchstart", () => keys["leftTouch"] = true);
+leftBtn.addEventListener("touchend", () => keys["leftTouch"] = false);
+
+rightBtn.addEventListener("touchstart", () => keys["rightTouch"] = true);
+rightBtn.addEventListener("touchend", () => keys["rightTouch"] = false);
+
+jumpBtn.addEventListener("touchstart", () => {
+  if (!player.jumping) {
+    player.dy = -jumpForce;
+    player.jumping = true;
+  }
+});
 
 // Drawing functions
 function drawPlayer() {
@@ -139,8 +157,8 @@ function checkObstacleCollision() {
 }
 
 function movePlayer() {
-  if (keys["ArrowRight"] || keys["d"]) player.x += 5;
-  if (keys["ArrowLeft"] || keys["a"]) player.x -= 5;
+  if (keys["ArrowRight"] || keys["d"] || keys["rightTouch"]) player.x += 5;
+  if (keys["ArrowLeft"] || keys["a"] || keys["leftTouch"]) player.x -= 5;
 
   if ((keys["ArrowUp"] || keys["w"] || keys[" "]) && !player.jumping) {
     player.dy = -jumpForce;

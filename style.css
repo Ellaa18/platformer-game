@@ -48,3 +48,28 @@ button:hover {
 .hidden {
   display: none;
 }
+
+/* Mobile controller buttons */
+.mobile-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 99;
+}
+
+.mobile-controls button {
+  padding: 20px;
+  font-size: 24px;
+  background: #444;
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+}
+
+.mobile-controls button:active {
+  background: white;
+  color: #222;
+}

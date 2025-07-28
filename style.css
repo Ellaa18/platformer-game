@@ -7,7 +7,7 @@ body {
 
 canvas {
   display: block;
-  margin: 20px auto;
+  margin: 0 auto;
   background-color: #87CEEB; /* sky blue */
   border: 3px solid #333;
   box-shadow: 0 0 10px #333;

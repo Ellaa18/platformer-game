@@ -24,13 +24,13 @@ const platforms = [
   { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 }, // ground
   { x: 300, y: CANVAS_HEIGHT - 150, width: 150, height: 20 },
   { x: 600, y: CANVAS_HEIGHT - 250, width: 150, height: 20 },
-  { x: 900, y: CANVAS_HEIGHT - 200, width: 150, height: 20 },
+  { x: 850, y: CANVAS_HEIGHT - 180, width: 100, height: 20 },
 ];
 
 // Obstacles
 const obstacles = [
   { x: 500, y: CANVAS_HEIGHT - 70, width: 30, height: 30 },
-  { x: 800, y: CANVAS_HEIGHT - 100, width: 30, height: 30 },
+  { x: 770, y: CANVAS_HEIGHT - 100, width: 30, height: 30 },
 ];
 
 // Moving enemy
@@ -43,36 +43,36 @@ const enemy = {
   color: "purple",
 };
 
-// Finishing line (yellow vertical)
+// Finish line
 const goal = {
-  x: CANVAS_WIDTH - 60,
+  x: CANVAS_WIDTH - 40,
   y: CANVAS_HEIGHT - 300,
   width: 10,
   height: 280,
   color: "yellow",
 };
 
-// Physics
 const gravity = 1.5;
 const jumpForce = 20;
 
-// Input keys
+// Input handling
 const keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
+// Drawing functions
 function drawPlayer() {
   ctx.fillStyle = player.color;
   ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
 function drawPlatforms() {
-  ctx.fillStyle = "green";
+  ctx.fillStyle = "#4CAF50";
   platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
 }
 
 function drawObstacles() {
-  ctx.fillStyle = "black";
+  ctx.fillStyle = "#000";
   obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
 }
 
@@ -84,7 +84,6 @@ function drawEnemy() {
 function drawGoal() {
   ctx.fillStyle = goal.color;
   ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
-  // Add "FINISH" label
   ctx.fillStyle = "black";
   ctx.font = "bold 16px Arial";
   ctx.fillText("FINISH", goal.x - 10, goal.y - 10);
@@ -96,6 +95,7 @@ function drawScore() {
   ctx.fillText(`Score: ${score}`, 20, 40);
 }
 
+// Game logic
 function checkPlatformCollision() {
   let onGround = false;
   platforms.forEach(p => {
@@ -111,13 +111,12 @@ function checkPlatformCollision() {
       onGround = true;
     }
   });
-  if (!onGround) {
-    player.dy += gravity;
-  }
+
+  if (!onGround) player.dy += gravity;
 }
 
 function checkObstacleCollision() {
-  obstacles.forEach(o => {
+  for (const o of obstacles) {
     if (
       player.x < o.x + o.width &&
       player.x + player.width > o.x &&
@@ -125,10 +124,10 @@ function checkObstacleCollision() {
       player.y + player.height > o.y
     ) {
       endGame();
+      return;
     }
-  });
+  }
 
-  // Enemy collision
   if (
     player.x < enemy.x + enemy.width &&
     player.x + player.width > enemy.x &&
@@ -142,13 +141,14 @@ function checkObstacleCollision() {
 function movePlayer() {
   if (keys["ArrowRight"] || keys["d"]) player.x += 5;
   if (keys["ArrowLeft"] || keys["a"]) player.x -= 5;
+
   if ((keys["ArrowUp"] || keys["w"] || keys[" "]) && !player.jumping) {
     player.dy = -jumpForce;
     player.jumping = true;
   }
+
   player.y += player.dy;
 
-  // Keep player inside canvas horizontally
   if (player.x < 0) player.x = 0;
   if (player.x + player.width > CANVAS_WIDTH) player.x = CANVAS_WIDTH - player.width;
 }
@@ -189,7 +189,7 @@ function gameLoop() {
   drawPlayer();
   drawScore();
 
-  score++; // Increase score over time
+  score++;
 
   requestAnimationFrame(gameLoop);
 }
@@ -215,8 +215,6 @@ function restartGame() {
 }
 
 function exitGame() {
-  // If window.close() doesn't work (usually on browsers),
-  // we can redirect to a goodbye page or just reload:
   alert("Thanks for playing!");
   window.location.reload();
 }
@@ -224,7 +222,7 @@ function exitGame() {
 function endGame(won = false) {
   gameRunning = false;
   gameOver = true;
-  const message = won ? "You Win! 🎉" : "Game Over!";
+  const message = won ? "🎉 You Win!" : "Game Over!";
   document.getElementById("game-over-message").textContent = message;
   document.getElementById("game-over-screen").classList.remove("hidden");
 }

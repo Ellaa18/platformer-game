@@ -23,15 +23,17 @@ const player = {
 const platforms = [
   { x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20 },
   { x: 300, y: CANVAS_HEIGHT - 150, width: 150, height: 20 },
-  { x: 600, y: CANVAS_HEIGHT - 250, width: 150, height: 20 },
+  { x: 500, y: CANVAS_HEIGHT - 250, width: 290, height: 20 },
   { x: 850, y: CANVAS_HEIGHT - 180, width: 100, height: 20 },
 ];
 
-// Obstacles
+// obstacle 
 const obstacles = [
-  { x: 500, y: CANVAS_HEIGHT - 70, width: 30, height: 30 },
-  { x: 770, y: CANVAS_HEIGHT - 100, width: 30, height: 30 },
+  { x: 250, y: CANVAS_HEIGHT - 70, width: 30, height: 30 },
+ 
+  
 ];
+
 
 // Moving enemy
 const enemy = {
@@ -43,19 +45,27 @@ const enemy = {
   color: "purple",
 };
 
-// Finish line
+//  Goal moved further
 const goal = {
-  x: CANVAS_WIDTH - 40,
+  x: CANVAS_WIDTH - 20,
   y: CANVAS_HEIGHT - 300,
   width: 10,
   height: 280,
   color: "yellow",
 };
 
+// 🪙 Coins
+const coins = [
+  { x: 350, y: CANVAS_HEIGHT - 190, width: 20, height: 20, collected: false },
+  { x: 450, y: CANVAS_HEIGHT - 50, width: 20, height: 20, collected: false },
+  { x: 590, y: CANVAS_HEIGHT - 130, width: 20, height: 20, collected: false },
+  { x: 630, y: CANVAS_HEIGHT - 290, width: 20, height: 20, collected: false },
+  { x: 870, y: CANVAS_HEIGHT - 220, width: 20, height: 20, collected: false }
+];
+
 const gravity = 1.5;
 const jumpForce = 20;
 
-// Input handling
 const keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
@@ -78,7 +88,7 @@ jumpBtn.addEventListener("touchstart", () => {
   }
 });
 
-// Drawing functions
+// Drawing
 function drawPlayer() {
   ctx.fillStyle = player.color;
   ctx.fillRect(player.x, player.y, player.width, player.height);
@@ -107,13 +117,24 @@ function drawGoal() {
   ctx.fillText("FINISH", goal.x - 10, goal.y - 10);
 }
 
+function drawCoins() {
+  coins.forEach(coin => {
+    if (!coin.collected) {
+      ctx.fillStyle = "gold";
+      ctx.beginPath();
+      ctx.arc(coin.x + coin.width / 2, coin.y + coin.height / 2, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
 function drawScore() {
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
   ctx.fillText(`Score: ${score}`, 20, 40);
 }
 
-// Game logic
+// Logic
 function checkPlatformCollision() {
   let onGround = false;
   platforms.forEach(p => {
@@ -154,6 +175,21 @@ function checkObstacleCollision() {
   ) {
     endGame();
   }
+}
+
+function checkCoinCollection() {
+  coins.forEach(coin => {
+    if (
+      !coin.collected &&
+      player.x < coin.x + coin.width &&
+      player.x + player.width > coin.x &&
+      player.y < coin.y + coin.height &&
+      player.y + player.height > coin.y
+    ) {
+      coin.collected = true;
+      score += 10; // 🎯 1 coin = 10 points
+    }
+  });
 }
 
 function movePlayer() {
@@ -198,21 +234,21 @@ function gameLoop() {
   moveEnemy();
   checkPlatformCollision();
   checkObstacleCollision();
+  checkCoinCollection();
   checkGoal();
 
   drawPlatforms();
   drawObstacles();
   drawEnemy();
   drawGoal();
+  drawCoins();
   drawPlayer();
   drawScore();
-
-  score++;
 
   requestAnimationFrame(gameLoop);
 }
 
-// UI Functions
+// UI
 function startGame() {
   document.getElementById("start-screen").classList.add("hidden");
   document.getElementById("game-over-screen").classList.add("hidden");
@@ -229,6 +265,9 @@ function restartGame() {
   gameRunning = true;
   gameOver = false;
   score = 0;
+
+  coins.forEach(c => c.collected = false); // reset coins
+
   gameLoop();
 }
 
